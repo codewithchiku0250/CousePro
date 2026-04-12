@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, auth } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, setDoc, updateDoc } from 'firebase/firestore';
 import { Course, Order, UserProfile } from '../types';
 import { SEED_COURSES } from '../constants';
@@ -72,7 +72,6 @@ export default function Admin() {
   };
 
   const seedDatabase = async () => {
-    if (!confirm('This will seed the database with sample courses. Continue?')) return;
     setLoading(true);
     try {
       for (const course of SEED_COURSES) {
@@ -80,19 +79,18 @@ export default function Admin() {
       }
       fetchData();
     } catch (error) {
-      alert('Failed to seed database');
+      handleFirestoreError(error, OperationType.WRITE, 'courses');
     } finally {
       setLoading(false);
     }
   };
 
   const deleteCourse = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this course?')) return;
     try {
       await deleteDoc(doc(db, 'courses', id));
       setCourses(courses.filter(c => c.id !== id));
     } catch (error) {
-      alert('Failed to delete course');
+      handleFirestoreError(error, OperationType.DELETE, `courses/${id}`);
     }
   };
 
@@ -103,18 +101,17 @@ export default function Admin() {
       setEditingCourse(null);
       fetchData();
     } catch (error) {
-      alert('Failed to save course');
+      handleFirestoreError(error, OperationType.WRITE, `courses/${course.id}`);
     }
   };
 
   const toggleUserRole = async (userId: string, currentRole: string) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    if (!confirm(`Change user role to ${newRole}?`)) return;
     try {
       await updateDoc(doc(db, 'users', userId), { role: newRole });
       fetchData();
     } catch (error) {
-      alert('Failed to update user role');
+      handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
     }
   };
 

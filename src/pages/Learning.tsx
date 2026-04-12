@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SEED_COURSES } from '../constants';
-import { auth, db } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -22,19 +22,24 @@ export default function Learning() {
   useEffect(() => {
     if (user && course) {
       const fetchProgress = async () => {
-        const progressDoc = await getDoc(doc(db, 'progress', `${user.uid}_${course.id}`));
-        if (progressDoc.exists()) {
-          const data = progressDoc.data() as Progress;
-          setProgress(data);
-          
-          // Set initial lesson
-          const allLessons = course.modules.flatMap(m => m.lessons);
-          const initialLesson = allLessons.find(l => l.id === data.lastWatchedLesson) || allLessons[0];
-          setCurrentLesson(initialLesson);
-        } else {
-          navigate(`/course/${course.id}`);
+        try {
+          const progressDoc = await getDoc(doc(db, 'progress', `${user.uid}_${course.id}`));
+          if (progressDoc.exists()) {
+            const data = progressDoc.data() as Progress;
+            setProgress(data);
+            
+            // Set initial lesson
+            const allLessons = course.modules.flatMap(m => m.lessons);
+            const initialLesson = allLessons.find(l => l.id === data.lastWatchedLesson) || allLessons[0];
+            setCurrentLesson(initialLesson);
+          } else {
+            navigate(`/course/${course.id}`);
+          }
+        } catch (err) {
+          handleFirestoreError(err, OperationType.GET, `progress/${user.uid}_${course.id}`);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       };
       fetchProgress();
     }
@@ -62,19 +67,23 @@ export default function Learning() {
     const newPercentage = Math.round((newCompleted.length / allLessonsCount) * 100);
 
     const progressRef = doc(db, 'progress', `${user.uid}_${course.id}`);
-    await updateDoc(progressRef, {
-      completedLessons: newCompleted,
-      progressPercentage: newPercentage,
-      lastWatchedLesson: lessonId,
-      updatedAt: serverTimestamp(),
-    });
+    try {
+      await updateDoc(progressRef, {
+        completedLessons: newCompleted,
+        progressPercentage: newPercentage,
+        lastWatchedLesson: lessonId,
+        updatedAt: serverTimestamp(),
+      });
 
-    setProgress({
-      ...progress,
-      completedLessons: newCompleted,
-      progressPercentage: newPercentage,
-      lastWatchedLesson: lessonId,
-    });
+      setProgress({
+        ...progress,
+        completedLessons: newCompleted,
+        progressPercentage: newPercentage,
+        lastWatchedLesson: lessonId,
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `progress/${user.uid}_${course.id}`);
+    }
   };
 
   const selectLesson = (lesson: Lesson) => {

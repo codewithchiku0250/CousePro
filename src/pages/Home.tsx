@@ -1,10 +1,14 @@
 import { motion } from 'motion/react';
-import { ArrowRight, Sparkles, Brain, Code, Rocket, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Sparkles, Brain, Code, Rocket, ShieldCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEED_COURSES } from '../constants';
 import CourseCard from '../components/CourseCard';
+import { auth, signInWithGoogle } from '../lib/firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 export default function Home() {
+  const [user] = useAuthState(auth);
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -43,9 +47,15 @@ export default function Home() {
               Explore Courses
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <button className="flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-lg font-bold text-white transition-all hover:bg-white/10 sm:w-auto">
-              Watch Demo
-            </button>
+            {!user && (
+              <button 
+                onClick={signInWithGoogle}
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-lg font-bold text-white transition-all hover:bg-white/10 sm:w-auto"
+              >
+                <UserPlus className="h-5 w-5" />
+                Sign Up Now
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -121,11 +131,16 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link to="/courses" className="rounded-full bg-white px-8 py-4 text-lg font-bold text-blue-600 transition-all hover:bg-blue-50">
-              Get Started Now
+              Browse Courses
             </Link>
-            <button className="rounded-full border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20">
-              Contact Sales
-            </button>
+            {!user && (
+              <button 
+                onClick={signInWithGoogle}
+                className="rounded-full border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+              >
+                Sign Up Now
+              </button>
+            )}
           </div>
         </div>
       </section>

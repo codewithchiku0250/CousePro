@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { SEED_COURSES } from '../constants';
 import { Clock, User, Star, CheckCircle2, PlayCircle, ShieldCheck, CreditCard, Share2, Twitter, Facebook, Linkedin } from 'lucide-react';
-import { auth, db } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -48,7 +48,7 @@ export default function CourseDetail() {
 
   const handlePayment = async () => {
     if (!user) {
-      alert('Please login to purchase the course');
+      console.error('User not logged in');
       return;
     }
 
@@ -56,7 +56,7 @@ export default function CourseDetail() {
     const res = await loadRazorpay();
 
     if (!res) {
-      alert('Razorpay SDK failed to load. Are you online?');
+      console.error('Razorpay SDK failed to load');
       setLoading(false);
       return;
     }
@@ -96,29 +96,37 @@ export default function CourseDetail() {
 
           if (verifyData.status === 'success') {
             // 4. Save Order and Progress in Firestore
-            await addDoc(collection(db, 'orders'), {
-              userId: user.uid,
-              courseId: course.id,
-              amount: course.price,
-              status: 'paid',
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              createdAt: serverTimestamp(),
-            });
+            try {
+              await addDoc(collection(db, 'orders'), {
+                userId: user.uid,
+                courseId: course.id,
+                amount: course.price,
+                status: 'paid',
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                createdAt: serverTimestamp(),
+              });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.WRITE, 'orders');
+            }
 
-            await setDoc(doc(db, 'progress', `${user.uid}_${course.id}`), {
-              userId: user.uid,
-              courseId: course.id,
-              completedLessons: [],
-              lastWatchedLesson: '',
-              progressPercentage: 0,
-              updatedAt: serverTimestamp(),
-            });
+            try {
+              await setDoc(doc(db, 'progress', `${user.uid}_${course.id}`), {
+                userId: user.uid,
+                courseId: course.id,
+                completedLessons: [],
+                lastWatchedLesson: '',
+                progressPercentage: 0,
+                updatedAt: serverTimestamp(),
+              });
+            } catch (err) {
+              handleFirestoreError(err, OperationType.WRITE, `progress/${user.uid}_${course.id}`);
+            }
 
             setHasPurchased(true);
             navigate(`/learning/${course.id}`);
           } else {
-            alert('Payment verification failed');
+            console.error('Payment verification failed');
           }
         },
         prefill: {
@@ -134,7 +142,6 @@ export default function CourseDetail() {
       paymentObject.open();
     } catch (error) {
       console.error('Payment Error:', error);
-      alert('Something went wrong with the payment');
     } finally {
       setLoading(false);
     }
