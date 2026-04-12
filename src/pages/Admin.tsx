@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { Course, Order, UserProfile } from '../types';
 import { SEED_COURSES } from '../constants';
 import { 
@@ -38,13 +38,23 @@ export default function Admin() {
   useEffect(() => {
     if (user) {
       const checkAdmin = async () => {
-        const userDoc = await getDocs(collection(db, 'users'));
-        const currentUserDoc = userDoc.docs.find(d => d.id === user.uid);
-        
-        if (currentUserDoc && currentUserDoc.data().role === 'admin') {
-          setIsAdmin(true);
-          fetchData();
-        } else {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          if (userDoc.exists() && userDoc.data().role === 'admin') {
+            setIsAdmin(true);
+            fetchData();
+          } else {
+            // Fallback for the hardcoded admin email if role isn't set yet
+            if (user.email === 'al9434365@gmail.com') {
+              setIsAdmin(true);
+              fetchData();
+            } else {
+              navigate('/');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
           navigate('/');
         }
       };
