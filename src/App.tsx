@@ -28,25 +28,25 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user ? `User: ${user.email} (${user.uid})` : 'No user');
       if (user) {
         // Sync user profile to Firestore
         const userRef = doc(db, 'users', user.uid);
         try {
-          const userSnap = await getDoc(userRef);
-          
-          if (!userSnap.exists()) {
-            const isDeveloper = user.email === 'al9434365@gmail.com';
-            await setDoc(userRef, {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              role: isDeveloper ? 'admin' : 'user',
-              createdAt: serverTimestamp(),
-            });
-          }
+          // Use setDoc with merge: true to avoid needing a getDoc first if permissions are tricky
+          const isDeveloper = user.email === 'al9434365@gmail.com';
+          await setDoc(userRef, {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            role: isDeveloper ? 'admin' : 'user',
+            lastLogin: serverTimestamp(),
+          }, { merge: true });
+          console.log('User profile synced successfully');
         } catch (err) {
-          handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+          console.error('Error syncing user profile:', err);
+          handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
         }
       }
       setIsAuthReady(true);
