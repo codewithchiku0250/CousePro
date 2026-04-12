@@ -6,12 +6,14 @@ import { cn } from '../lib/utils';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import AuthModal from './AuthModal';
 
 export default function Navbar() {
   const [user] = useAuthState(auth);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const openAuthModal = () => {
+    window.dispatchEvent(new CustomEvent('open-auth-modal'));
+  };
 
   useEffect(() => {
     if (user) {
@@ -74,7 +76,7 @@ export default function Navbar() {
             </div>
           ) : (
             <button
-              onClick={() => setIsAuthModalOpen(true)}
+              onClick={openAuthModal}
               className="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
             >
               <LogIn className="h-4 w-4" />
@@ -83,11 +85,6 @@ export default function Navbar() {
           )}
         </div>
       </div>
-
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-      />
     </nav>
   );
 }

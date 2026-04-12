@@ -164,7 +164,12 @@ export default function Courses() {
         {loading ? (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-[400px] animate-pulse rounded-2xl bg-zinc-900" />
+              <div key={i} className="flex flex-col gap-4 rounded-2xl border border-white/5 bg-zinc-900/50 p-4">
+                <div className="aspect-video w-full animate-pulse rounded-xl bg-white/5" />
+                <div className="h-4 w-1/4 animate-pulse rounded bg-white/5" />
+                <div className="h-6 w-3/4 animate-pulse rounded bg-white/5" />
+                <div className="h-12 w-full animate-pulse rounded-xl bg-white/5 mt-auto" />
+              </div>
             ))}
           </div>
         ) : (

@@ -13,10 +13,18 @@ import CourseDetail from './pages/CourseDetail';
 import Dashboard from './pages/Dashboard';
 import Learning from './pages/Learning';
 import Admin from './pages/Admin';
+import AuthModal from './components/AuthModal';
 
 export default function App() {
   const [user, loading] = useAuthState(auth);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenAuth = () => setIsAuthModalOpen(true);
+    window.addEventListener('open-auth-modal', handleOpenAuth);
+    return () => window.removeEventListener('open-auth-modal', handleOpenAuth);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -84,6 +92,10 @@ export default function App() {
         </main>
         <Footer />
       </div>
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </Router>
   );
 }

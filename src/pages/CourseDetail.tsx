@@ -48,7 +48,7 @@ export default function CourseDetail() {
 
   const handlePayment = async () => {
     if (!user) {
-      console.error('User not logged in');
+      window.dispatchEvent(new CustomEvent('open-auth-modal'));
       return;
     }
 

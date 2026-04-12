@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Mail, Lock, User, LogIn, UserPlus, Chrome } from 'lucide-react';
+import { X, Mail, Lock, User, LogIn, UserPlus, Chrome, ShieldCheck } from 'lucide-react';
 import { auth, signInWithGoogle, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../lib/firebase';
 import { cn } from '../lib/utils';
 
@@ -66,20 +66,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 p-8 shadow-2xl"
+        className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] border border-white/10 bg-zinc-900/90 p-8 shadow-2xl backdrop-blur-xl md:p-10"
       >
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 text-gray-500 hover:text-white transition-colors"
+          className="absolute right-8 top-8 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white transition-all"
         >
-          <X className="h-6 w-6" />
+          <X className="h-5 w-5" />
         </button>
 
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold text-white">
+        <div className="mb-10 text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-600/20">
+            <ShieldCheck className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-white">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <p className="mt-2 text-gray-400">
+          <p className="mt-3 text-gray-400">
             {isLogin ? 'Sign in to continue your learning journey' : 'Join our community of AI experts'}
           </p>
         </div>
