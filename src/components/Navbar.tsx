@@ -6,10 +6,12 @@ import { cn } from '../lib/utils';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import AuthModal from './AuthModal';
 
 export default function Navbar() {
   const [user] = useAuthState(auth);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -53,8 +55,14 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img src={user.photoURL || ''} alt={user.displayName || ''} className="h-8 w-8 rounded-full border border-white/20" referrerPolicy="no-referrer" />
-                <span className="hidden text-sm font-medium text-white md:block">{user.displayName}</span>
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || ''} className="h-8 w-8 rounded-full border border-white/20" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+                <span className="hidden text-sm font-medium text-white md:block">{user.displayName || user.email?.split('@')[0]}</span>
               </div>
               <button
                 onClick={() => auth.signOut()}
@@ -66,7 +74,7 @@ export default function Navbar() {
             </div>
           ) : (
             <button
-              onClick={signInWithGoogle}
+              onClick={() => setIsAuthModalOpen(true)}
               className="flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
             >
               <LogIn className="h-4 w-4" />
@@ -75,6 +83,11 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </nav>
   );
 }

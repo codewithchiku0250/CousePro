@@ -3,11 +3,14 @@ import { ArrowRight, Sparkles, Brain, Code, Rocket, ShieldCheck, UserPlus } from
 import { Link } from 'react-router-dom';
 import { SEED_COURSES } from '../constants';
 import CourseCard from '../components/CourseCard';
-import { auth, signInWithGoogle } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { useState } from 'react';
+import AuthModal from '../components/AuthModal';
 
 export default function Home() {
   const [user] = useAuthState(auth);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col">
@@ -49,7 +52,7 @@ export default function Home() {
             </Link>
             {!user && (
               <button 
-                onClick={signInWithGoogle}
+                onClick={() => setIsAuthModalOpen(true)}
                 className="flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-lg font-bold text-white transition-all hover:bg-white/10 sm:w-auto"
               >
                 <UserPlus className="h-5 w-5" />
@@ -135,7 +138,7 @@ export default function Home() {
             </Link>
             {!user && (
               <button 
-                onClick={signInWithGoogle}
+                onClick={() => setIsAuthModalOpen(true)}
                 className="rounded-full border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
               >
                 Sign Up Now
@@ -144,6 +147,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </div>
   );
 }

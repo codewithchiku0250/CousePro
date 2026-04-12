@@ -27,12 +27,13 @@ export default function App() {
           const userSnap = await getDoc(userRef);
           
           if (!userSnap.exists()) {
+            const isDeveloper = user.email === 'al9434365@gmail.com';
             await setDoc(userRef, {
               uid: user.uid,
               email: user.email,
               displayName: user.displayName,
               photoURL: user.photoURL,
-              role: 'user', // Default role
+              role: isDeveloper ? 'admin' : 'user',
               createdAt: serverTimestamp(),
             });
           }

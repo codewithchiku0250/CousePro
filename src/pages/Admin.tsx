@@ -18,7 +18,7 @@ import {
 import CourseModal from '../components/CourseModal';
 import { cn } from '../lib/utils';
 
-type Tab = 'overview' | 'courses' | 'users' | 'orders';
+type Tab = 'overview' | 'courses' | 'users' | 'orders' | 'settings';
 
 export default function Admin() {
   const [user] = useAuthState(auth);
@@ -142,6 +142,7 @@ export default function Admin() {
                 { id: 'courses', label: 'Courses', icon: BookOpen },
                 { id: 'users', label: 'Users', icon: Users },
                 { id: 'orders', label: 'Orders', icon: CreditCard },
+                { id: 'settings', label: 'Settings', icon: Settings },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -458,6 +459,44 @@ export default function Admin() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="max-w-2xl space-y-8"
+              >
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-8">
+                  <h3 className="text-lg font-bold text-white mb-6">Platform Configuration</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Platform Name</label>
+                      <input type="text" defaultValue="AI Course Pro" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Support Email</label>
+                      <input type="email" defaultValue="support@aicoursepro.com" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Currency Symbol</label>
+                      <input type="text" defaultValue="₹" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" />
+                    </div>
+                    <button className="w-full rounded-xl bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 transition-all">
+                      Save Settings
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8">
+                  <h3 className="text-lg font-bold text-red-500 mb-2">Danger Zone</h3>
+                  <p className="text-sm text-gray-400 mb-6">Irreversible actions for your platform.</p>
+                  <button className="rounded-xl border border-red-500/30 px-6 py-3 text-sm font-bold text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                    Reset Platform Data
+                  </button>
                 </div>
               </motion.div>
             )}
