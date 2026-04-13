@@ -3,7 +3,7 @@ import { Course, Module } from '../types';
 import { X, Plus, Trash2, Save, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { storage } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 interface CourseModalProps {
   course?: Course | null;
@@ -24,6 +24,7 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
     }
   );
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,18 +44,36 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
     }
 
     setUploading(true);
+    setUploadProgress(0);
+    
     try {
       const courseId = course?.id || `course_${Date.now()}`;
-      const storageRef = ref(storage, `course-thumbnails/${courseId}_${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const fileName = `${courseId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const storageRef = ref(storage, `course-thumbnails/${fileName}`);
       
-      setFormData({ ...formData, thumbnail: downloadURL });
-      console.log('File uploaded successfully:', downloadURL);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Failed to upload image. Please try again.');
-    } finally {
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+          console.log('Upload is ' + progress + '% done');
+        }, 
+        (error) => {
+          console.error('Upload error:', error);
+          setUploading(false);
+          alert(`Upload failed: ${error.message}. Please ensure Firebase Storage is enabled in your console.`);
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setFormData({ ...formData, thumbnail: downloadURL });
+          setUploading(false);
+          console.log('File available at', downloadURL);
+        }
+      );
+    } catch (error: any) {
+      console.error('Error initiating upload:', error);
+      alert('Failed to start upload. Please try again.');
       setUploading(false);
     }
   };
@@ -189,11 +208,16 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
                     className="flex items-center gap-2 rounded-xl bg-blue-600/10 px-4 py-2.5 text-sm font-bold text-blue-400 hover:bg-blue-600/20 disabled:opacity-50"
                   >
                     {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{Math.round(uploadProgress)}%</span>
+                      </div>
                     ) : (
-                      <Upload className="h-4 w-4" />
+                      <>
+                        <Upload className="h-4 w-4" />
+                        <span>Upload</span>
+                      </>
                     )}
-                    Upload
                   </button>
                 </div>
                 <p className="text-[10px] text-gray-500">
