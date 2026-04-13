@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Course, Module } from '../types';
 import { X, Plus, Trash2, Save, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { storage } from '../lib/firebase';
+import { storage, auth } from '../lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 interface CourseModalProps {
@@ -47,6 +47,15 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
     setUploadProgress(0);
     
     try {
+      if (!auth.currentUser) {
+        alert('You must be logged in to upload images.');
+        setUploading(false);
+        return;
+      }
+
+      console.log('Current User UID:', auth.currentUser.uid);
+      console.log('Storage Instance:', storage ? 'Initialized' : 'Not Initialized');
+
       const courseId = course?.id || `course_${Date.now()}`;
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       const fileName = `course-thumbnails/${courseId}_${Date.now()}_${cleanFileName}`;

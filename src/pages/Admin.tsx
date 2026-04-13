@@ -148,14 +148,23 @@ export default function Admin() {
   };
 
   const saveSettings = async () => {
+    console.log('Attempting to save settings...', platformSettings);
     setLoading(true);
     try {
-      await setDoc(doc(db, 'settings', 'platform'), platformSettings);
+      const settingsRef = doc(db, 'settings', 'platform');
+      await setDoc(settingsRef, platformSettings);
+      console.log('Settings saved successfully to Firestore');
       alert('Settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      handleFirestoreError(error, OperationType.WRITE, 'settings/platform');
+    } catch (error: any) {
+      console.error('Detailed error saving settings:', error);
+      // Don't let the UI get stuck if handleFirestoreError fails
+      try {
+        handleFirestoreError(error, OperationType.WRITE, 'settings/platform');
+      } catch (e) {
+        alert(`Error: ${error.message || 'Failed to save settings'}`);
+      }
     } finally {
+      console.log('Setting loading to false');
       setLoading(false);
     }
   };

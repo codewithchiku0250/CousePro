@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Allow read access to all users (publicly accessible thumbnails)
+      allow read: if true;
+      
+      // Allow write access only to authenticated users (admins)
+      // For development/test mode, you can use:
+      // allow write: if request.auth != null;
+      
+      // Strict rule for production:
+      allow write: if request.auth != null && 
+                   (request.auth.token.email == "al9434365@gmail.com" || 
+                    firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+  }
+}
