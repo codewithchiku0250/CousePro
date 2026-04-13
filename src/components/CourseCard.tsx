@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Course } from '../types';
-import { Clock, User, Star, ArrowRight } from 'lucide-react';
+import { Clock, User, Star, ArrowRight, Edit3 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface CourseCardProps {
   course: Course;
+  onEdit?: (course: Course) => void;
+  isAdmin?: boolean;
   key?: string | number;
 }
 
-export default function CourseCard({ course }: CourseCardProps) {
+export default function CourseCard({ course, onEdit, isAdmin }: CourseCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -17,6 +19,19 @@ export default function CourseCard({ course }: CourseCardProps) {
       transition={{ duration: 0.5 }}
       className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-blue-500/50 hover:bg-white/10"
     >
+      {isAdmin && onEdit && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit(course);
+          }}
+          className="absolute right-6 top-6 z-20 rounded-full bg-blue-600 p-2 text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+          title="Edit Course"
+        >
+          <Edit3 className="h-4 w-4" />
+        </button>
+      )}
       <div className="relative aspect-video overflow-hidden rounded-xl">
         <img
           src={course.thumbnail}

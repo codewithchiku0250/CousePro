@@ -1,38 +1,79 @@
 import { useState, useEffect, useMemo } from 'react';
-import { db } from '../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
+import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { Course } from '../types';
 import { SEED_COURSES } from '../constants';
 import CourseCard from '../components/CourseCard';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import CourseModal from '../components/CourseModal';
 
 export default function Courses() {
+  const [user] = useAuthState(auth);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState('All');
   const [priceRange, setPriceRange] = useState<number>(10000);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'courses'));
-        if (querySnapshot.empty) {
-          setCourses(SEED_COURSES);
-        } else {
-          setCourses(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
+    if (user) {
+      const checkAdmin = async () => {
+        if (user.email === 'al9434365@gmail.com') {
+          setIsAdmin(true);
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching courses:', error);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists() && userDoc.data().role === 'admin') {
+            setIsAdmin(true);
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      };
+      checkAdmin();
+    }
+  }, [user]);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'courses'));
+      if (querySnapshot.empty) {
         setCourses(SEED_COURSES);
-      } finally {
-        setLoading(false);
+      } else {
+        setCourses(querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
       }
-    };
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      setCourses(SEED_COURSES);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCourses();
   }, []);
+
+  const handleSaveCourse = async (courseData: Course) => {
+    try {
+      await setDoc(doc(db, 'courses', courseData.id), courseData);
+      setIsModalOpen(false);
+      setEditingCourse(null);
+      await fetchCourses();
+      alert('Course updated successfully!');
+    } catch (error) {
+      console.error('Error saving course:', error);
+      handleFirestoreError(error, OperationType.WRITE, `courses/${courseData.id}`);
+    }
+  };
 
   const instructors = useMemo(() => {
     const unique = new Set(courses.map(c => c.instructor));
@@ -182,7 +223,15 @@ export default function Courses() {
             {filteredCourses.length > 0 ? (
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredCourses.map((course) => (
-                  <CourseCard key={course.id} course={course} />
+                  <CourseCard 
+                    key={course.id} 
+                    course={course} 
+                    isAdmin={isAdmin}
+                    onEdit={(c) => {
+                      setEditingCourse(c);
+                      setIsModalOpen(true);
+                    }}
+                  />
                 ))}
               </div>
             ) : (
@@ -203,6 +252,19 @@ export default function Courses() {
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <CourseModal
+            course={editingCourse}
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingCourse(null);
+            }}
+            onSave={handleSaveCourse}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Course, Module } from '../types';
-import { X, Plus, Trash2, Save } from 'lucide-react';
+import { X, Plus, Trash2, Save, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface CourseModalProps {
   course?: Course | null;
@@ -21,6 +23,41 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
       modules: []
     }
   );
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file.');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size should be less than 2MB.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const courseId = course?.id || `course_${Date.now()}`;
+      const storageRef = ref(storage, `course-thumbnails/${courseId}_${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      
+      setFormData({ ...formData, thumbnail: downloadURL });
+      console.log('File uploaded successfully:', downloadURL);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,17 +163,46 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-400">Thumbnail URL</label>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <input
-                type="text"
-                required
-                value={formData.thumbnail}
-                onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none"
-              />
-              {formData.thumbnail && (
-                <div className="h-24 w-40 shrink-0 overflow-hidden rounded-lg border border-white/10">
+            <label className="text-sm font-medium text-gray-400">Course Thumbnail</label>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              <div className="flex-1 space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Image URL"
+                    value={formData.thumbnail}
+                    onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none"
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2 rounded-xl bg-blue-600/10 px-4 py-2.5 text-sm font-bold text-blue-400 hover:bg-blue-600/20 disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    Upload
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-500">
+                  Enter a URL or upload an image (max 2MB). Recommended size: 800x450px.
+                </p>
+              </div>
+
+              <div className="relative h-28 w-48 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                {formData.thumbnail ? (
                   <img
                     src={formData.thumbnail}
                     alt="Preview"
@@ -146,8 +212,18 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
                       (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/error/400/225';
                     }}
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center text-gray-600">
+                    <ImageIcon className="h-8 w-8" />
+                    <span className="mt-1 text-[10px]">No Image</span>
+                  </div>
+                )}
+                {uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
