@@ -21,9 +21,21 @@ export default function AdminLogin() {
   const checkAdminStatus = async (uid: string, email: string) => {
     setCheckingAdmin(true);
     setError(null);
+    
+    // 1. Immediate check for hardcoded admin email
+    const isHardcodedAdmin = email === 'al9434365@gmail.com';
+    
+    if (isHardcodedAdmin) {
+      console.log('Hardcoded admin detected, granting access...');
+      navigate('/admin');
+      setCheckingAdmin(false);
+      return;
+    }
+
     try {
+      // 2. Check Firestore for admin role
       const userDoc = await getDoc(doc(db, 'users', uid));
-      const isAdmin = (userDoc.exists() && userDoc.data().role === 'admin') || email === 'al9434365@gmail.com';
+      const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
       
       if (isAdmin) {
         navigate('/admin');
@@ -31,9 +43,12 @@ export default function AdminLogin() {
         setError('Access Denied: You do not have administrator privileges.');
         await auth.signOut();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Admin check error:', err);
-      setError('An error occurred while verifying your status.');
+      // If it's a permission error but they just logged in, it might be a race condition
+      // But since we already checked the hardcoded email above, this catch block 
+      // is mainly for other users or unexpected errors.
+      setError('Access Denied or Verification Error. Please ensure you are using the admin account.');
     } finally {
       setCheckingAdmin(false);
     }

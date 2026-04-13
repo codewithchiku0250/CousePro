@@ -38,6 +38,13 @@ export default function Admin() {
   useEffect(() => {
     if (user) {
       const checkAdmin = async () => {
+        // 1. Priority check for hardcoded admin email
+        if (user.email === 'al9434365@gmail.com') {
+          setIsAdmin(true);
+          fetchData();
+          return;
+        }
+
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           
@@ -45,16 +52,11 @@ export default function Admin() {
             setIsAdmin(true);
             fetchData();
           } else {
-            // Fallback for the hardcoded admin email if role isn't set yet
-            if (user.email === 'al9434365@gmail.com') {
-              setIsAdmin(true);
-              fetchData();
-            } else {
-              navigate('/');
-            }
+            navigate('/');
           }
         } catch (error) {
           console.error('Error checking admin status:', error);
+          // If Firestore check fails but they aren't the hardcoded admin, redirect
           navigate('/');
         }
       };
