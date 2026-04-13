@@ -13,6 +13,7 @@ import CourseDetail from './pages/CourseDetail';
 import Dashboard from './pages/Dashboard';
 import Learning from './pages/Learning';
 import Admin from './pages/Admin';
+import AdminLogin from './pages/AdminLogin';
 import AuthModal from './components/AuthModal';
 
 export default function App() {
@@ -87,8 +88,9 @@ export default function App() {
             />
             <Route 
               path="/admin" 
-              element={user ? <Admin /> : <Navigate to="/" />} 
+              element={user ? <Admin /> : <Navigate to="/admin-login" />} 
             />
+            <Route path="/admin-login" element={<AdminLogin />} />
             
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
