@@ -34,6 +34,11 @@ export default function Admin() {
   const [courseSearch, setCourseSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [orderSearch, setOrderSearch] = useState('');
+  const [platformSettings, setPlatformSettings] = useState({
+    name: 'AI Course Pro',
+    supportEmail: 'support@aicoursepro.com',
+    currency: '₹'
+  });
 
   useEffect(() => {
     if (user) {
@@ -77,6 +82,12 @@ export default function Admin() {
       setCourses(courseSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
       setOrders(orderSnap.docs.map(d => ({ id: d.id, ...d.data() } as Order)));
       setUsers(userSnap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile)));
+
+      // Fetch platform settings
+      const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
+      if (settingsDoc.exists()) {
+        setPlatformSettings(settingsDoc.data() as any);
+      }
     } catch (error) {
       console.error('Error fetching admin data:', error);
     } finally {
@@ -133,6 +144,19 @@ export default function Admin() {
       fetchData();
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${userId}`);
+    }
+  };
+
+  const saveSettings = async () => {
+    setLoading(true);
+    try {
+      await setDoc(doc(db, 'settings', 'platform'), platformSettings);
+      alert('Settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      handleFirestoreError(error, OperationType.WRITE, 'settings/platform');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -496,18 +520,37 @@ export default function Admin() {
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">Platform Name</label>
-                      <input type="text" defaultValue="AI Course Pro" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" />
+                      <input 
+                        type="text" 
+                        value={platformSettings.name} 
+                        onChange={(e) => setPlatformSettings({ ...platformSettings, name: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" 
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">Support Email</label>
-                      <input type="email" defaultValue="support@aicoursepro.com" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" />
+                      <input 
+                        type="email" 
+                        value={platformSettings.supportEmail} 
+                        onChange={(e) => setPlatformSettings({ ...platformSettings, supportEmail: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" 
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-2">Currency Symbol</label>
-                      <input type="text" defaultValue="₹" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" />
+                      <input 
+                        type="text" 
+                        value={platformSettings.currency} 
+                        onChange={(e) => setPlatformSettings({ ...platformSettings, currency: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none" 
+                      />
                     </div>
-                    <button className="w-full rounded-xl bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 transition-all">
-                      Save Settings
+                    <button 
+                      onClick={saveSettings}
+                      disabled={loading}
+                      className="w-full rounded-xl bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 transition-all disabled:opacity-50"
+                    >
+                      {loading ? 'Saving...' : 'Save Settings'}
                     </button>
                   </div>
                 </div>
