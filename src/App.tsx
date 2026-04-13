@@ -27,29 +27,32 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('Auth state changed:', user ? `User: ${user.email} (${user.uid})` : 'No user');
-      if (user) {
-        // Sync user profile to Firestore
-        const userRef = doc(db, 'users', user.uid);
-        try {
-          // Use setDoc with merge: true to avoid needing a getDoc first if permissions are tricky
-          const isDeveloper = user.email === 'al9434365@gmail.com';
-          await setDoc(userRef, {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            role: isDeveloper ? 'admin' : 'user',
-            lastLogin: serverTimestamp(),
-          }, { merge: true });
-          console.log('User profile synced successfully');
-        } catch (err) {
-          console.error('Error syncing user profile:', err);
-          handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
-        }
-      }
       setIsAuthReady(true);
+      
+      if (user) {
+        // Sync user profile to Firestore in background
+        const syncProfile = async () => {
+          const userRef = doc(db, 'users', user.uid);
+          try {
+            const isDeveloper = user.email === 'al9434365@gmail.com';
+            await setDoc(userRef, {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              role: isDeveloper ? 'admin' : 'user',
+              lastLogin: serverTimestamp(),
+            }, { merge: true });
+            console.log('User profile synced successfully');
+          } catch (err) {
+            console.error('Error syncing user profile:', err);
+            // Don't block the app for sync errors, but log them
+          }
+        };
+        syncProfile();
+      }
     });
 
     return () => unsubscribe();

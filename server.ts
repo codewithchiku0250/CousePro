@@ -5,8 +5,24 @@ import { fileURLToPath } from 'url';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import admin from 'firebase-admin';
+import firebaseConfig from './firebase-applet-config.json';
+import { sendEnrollmentEmail, sendCompletionEmail } from './src/services/emailService.js';
 
 dotenv.config();
+
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    projectId: firebaseConfig.projectId,
+  });
+}
+const adminDb = admin.firestore();
+if (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)') {
+  // If a specific database ID is provided, we should use it. 
+  // Note: admin.firestore(databaseId) is the way to access named databases.
+  // However, in many cases '(default)' is used.
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,7 +121,80 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    
+    // Set up Firestore Listeners for Notifications
+    setupFirestoreListeners();
   });
+
+  function setupFirestoreListeners() {
+    console.log('Setting up Firestore listeners for notifications (using Admin SDK)...');
+
+    // 1. Listen for new paid orders (Enrollments)
+    adminDb.collection('orders')
+      .where('status', '==', 'paid')
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+          if (change.type === 'added') {
+            const orderData = change.doc.data();
+            console.log('New paid order detected:', change.doc.id);
+            
+            try {
+              // Fetch user details
+              const userDoc = await adminDb.collection('users').doc(orderData.userId).get();
+              // Fetch course details
+              const courseDoc = await adminDb.collection('courses').doc(orderData.courseId).get();
+
+              if (userDoc.exists && courseDoc.exists) {
+                const userData = userDoc.data();
+                const courseData = courseDoc.data();
+                
+                if (userData && courseData) {
+                  await sendEnrollmentEmail(userData.email, userData.displayName || 'Learner', courseData.title);
+                  console.log(`Enrollment email sent to ${userData.email} for ${courseData.title}`);
+                }
+              }
+            } catch (error) {
+              console.error('Error processing enrollment notification:', error);
+            }
+          }
+        });
+      }, (error) => {
+        console.error('Error in orders snapshot listener:', error);
+      });
+
+    // 2. Listen for course completion (Progress == 100)
+    adminDb.collection('progress')
+      .where('progressPercentage', '==', 100)
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+          if (change.type === 'added' || change.type === 'modified') {
+            const progressData = change.doc.data();
+            console.log('Course completion detected for user:', progressData.userId);
+
+            try {
+              // Fetch user details
+              const userDoc = await adminDb.collection('users').doc(progressData.userId).get();
+              // Fetch course details
+              const courseDoc = await adminDb.collection('courses').doc(progressData.courseId).get();
+
+              if (userDoc.exists && courseDoc.exists) {
+                const userData = userDoc.data();
+                const courseData = courseDoc.data();
+                
+                if (userData && courseData) {
+                  await sendCompletionEmail(userData.email, userData.displayName || 'Learner', courseData.title);
+                  console.log(`Completion email sent to ${userData.email} for ${courseData.title}`);
+                }
+              }
+            } catch (error) {
+              console.error('Error processing completion notification:', error);
+            }
+          }
+        });
+      }, (error) => {
+        console.error('Error in progress snapshot listener:', error);
+      });
+  }
 }
 
 startServer();

@@ -23,6 +23,7 @@ export default function CourseCard({ course }: CourseCardProps) {
           alt={course.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           referrerPolicy="no-referrer"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 transition-opacity group-hover:opacity-80" />
         

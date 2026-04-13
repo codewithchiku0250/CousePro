@@ -151,7 +151,7 @@ export default function CourseDetail() {
     <div className="min-h-screen bg-black pb-20">
       {/* Hero Section */}
       <div className="relative h-[400px] w-full overflow-hidden">
-        <img src={course.thumbnail} alt={course.title} className="h-full w-full object-cover blur-sm opacity-50" referrerPolicy="no-referrer" />
+        <img src={course.thumbnail} alt={course.title} className="h-full w-full object-cover blur-sm opacity-50" referrerPolicy="no-referrer" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-center px-4">
           <div className="mx-auto max-w-7xl w-full">

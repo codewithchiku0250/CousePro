@@ -8,7 +8,7 @@ export const SEED_COURSES: Course[] = [
     instructor: 'Dr. Sarah Chen',
     price: 499,
     duration: '10 Hours',
-    thumbnail: 'https://picsum.photos/seed/ai-fund/800/450',
+    thumbnail: 'https://picsum.photos/seed/ai-fund/400/225',
     modules: [
       {
         id: 'm1',
@@ -27,7 +27,7 @@ export const SEED_COURSES: Course[] = [
     instructor: 'James Wilson',
     price: 999,
     duration: '15 Hours',
-    thumbnail: 'https://picsum.photos/seed/ml-basics/800/450',
+    thumbnail: 'https://picsum.photos/seed/ml-basics/400/225',
     modules: [
       {
         id: 'm1',
@@ -45,7 +45,7 @@ export const SEED_COURSES: Course[] = [
     instructor: 'Elena Rodriguez',
     price: 1499,
     duration: '25 Hours',
-    thumbnail: 'https://picsum.photos/seed/deep-learning/800/450',
+    thumbnail: 'https://picsum.photos/seed/deep-learning/400/225',
     modules: [
       {
         id: 'm1',
@@ -63,7 +63,7 @@ export const SEED_COURSES: Course[] = [
     instructor: 'Alex Rivera',
     price: 799,
     duration: '12 Hours',
-    thumbnail: 'https://picsum.photos/seed/gen-ai/800/450',
+    thumbnail: 'https://picsum.photos/seed/gen-ai/400/225',
     modules: [
       {
         id: 'm1',
@@ -81,7 +81,7 @@ export const SEED_COURSES: Course[] = [
     instructor: 'David Kim',
     price: 1999,
     duration: '30 Hours',
-    thumbnail: 'https://picsum.photos/seed/ai-app/800/450',
+    thumbnail: 'https://picsum.photos/seed/ai-app/400/225',
     modules: [
       {
         id: 'm1',

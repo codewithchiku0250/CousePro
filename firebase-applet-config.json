@@ -1,10 +1,10 @@
 {
-  "projectId": "coursepro-4c79b",
-  "appId": "1:229632805909:web:ab4d3eb39891421a79d21c",
   "apiKey": "AIzaSyBwuN49oS0W73uvAT5nBOGnrJxwHgITOS4",
   "authDomain": "coursepro-4c79b.firebaseapp.com",
-  "firestoreDatabaseId": "(default)",
+  "projectId": "coursepro-4c79b",
   "storageBucket": "coursepro-4c79b.firebasestorage.app",
   "messagingSenderId": "229632805909",
-  "measurementId": "G-6JT0GHCWD9"
+  "appId": "1:229632805909:web:ab4d3eb39891421a79d21c",
+  "measurementId": "G-6JT0GHCWD9",
+  "firestoreDatabaseId": "(default)"
 }
