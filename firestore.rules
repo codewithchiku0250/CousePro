@@ -1,25 +1,106 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: userId (Auth UID)
+// Fields:
+//   - uid: string (required)
+//   - email: string (required, format: email)
+//   - displayName: string
+//   - photoURL: string
+//   - role: string (required, enum: ['user', 'admin'])
+//   - createdAt: string (format: date-time)
+//
+// Collection: courses
+// Document ID: courseId
+// Fields:
+//   - id: string
+//   - title: string (required)
+//   - description: string
+//   - instructor: string (required)
+//   - price: number (required)
+//   - duration: string
+//   - thumbnail: string
+//   - modules: array of objects
+//
+// Collection: orders
+// Document ID: orderId
+// Fields:
+//   - orderId: string
+//   - userId: string (required)
+//   - courseId: string (required)
+//   - amount: number (required)
+//   - status: string (required, enum: ['created', 'paid', 'failed'])
+//   - createdAt: string (format: date-time)
+//
+// Collection: settings
+// Document ID: platform
+// Fields:
+//   - name: string
+//   - supportEmail: string
+//   - currency: string
+//
+// ===============================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "al9434365@gmail.com" && request.auth.token.email_verified == true));
     }
 
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) || isAdmin();
+    }
+
+    // Courses Collection
     match /courses/{courseId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == "al9434365@gmail.com";
+      allow write: if isAdmin();
     }
 
+    // Orders Collection
     match /orders/{orderId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || request.auth.token.email == "al9434365@gmail.com");
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.token.email == "al9434365@gmail.com";
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
     }
 
-    match /progress/{progressId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || request.auth.token.email == "al9434365@gmail.com");
-      allow write: if request.auth != null && (request.auth.uid == request.resource.data.userId || request.auth.token.email == "al9434365@gmail.com");
+    // Settings Collection
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -17,11 +17,11 @@ if (!admin.apps.length) {
     projectId: firebaseConfig.projectId,
   });
 }
+// Correct way to access a named database in Admin SDK
 const adminDb = admin.firestore();
 if (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)') {
-  // If a specific database ID is provided, we should use it. 
-  // Note: admin.firestore(databaseId) is the way to access named databases.
-  // However, in many cases '(default)' is used.
+  // @ts-ignore - databaseId is supported in newer versions of firebase-admin
+  adminDb.settings({ databaseId: firebaseConfig.firestoreDatabaseId });
 }
 
 const __filename = fileURLToPath(import.meta.url);
