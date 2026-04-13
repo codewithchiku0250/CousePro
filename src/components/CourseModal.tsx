@@ -48,27 +48,45 @@ export default function CourseModal({ course, onClose, onSave }: CourseModalProp
     
     try {
       const courseId = course?.id || `course_${Date.now()}`;
-      const fileName = `${courseId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const storageRef = ref(storage, `course-thumbnails/${fileName}`);
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `course-thumbnails/${courseId}_${Date.now()}_${cleanFileName}`;
+      const storageRef = ref(storage, fileName);
       
+      console.log('Starting upload to:', fileName);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on('state_changed', 
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
-          console.log('Upload is ' + progress + '% done');
+          console.log(`Upload progress: ${progress.toFixed(2)}%`);
         }, 
         (error) => {
-          console.error('Upload error:', error);
+          console.error('Full Upload Error Object:', error);
           setUploading(false);
-          alert(`Upload failed: ${error.message}. Please ensure Firebase Storage is enabled in your console.`);
+          
+          let errorMessage = error.message;
+          if (error.code === 'storage/unauthorized') {
+            errorMessage = 'Permission denied. Please check your Firebase Storage Rules.';
+          } else if (error.code === 'storage/canceled') {
+            errorMessage = 'Upload canceled.';
+          } else if (error.code === 'storage/unknown') {
+            errorMessage = 'An unknown error occurred. Check your internet connection and CORS settings.';
+          }
+          
+          alert(`Upload failed (${error.code}): ${errorMessage}`);
         }, 
         async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setFormData({ ...formData, thumbnail: downloadURL });
-          setUploading(false);
-          console.log('File available at', downloadURL);
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setFormData({ ...formData, thumbnail: downloadURL });
+            setUploading(false);
+            console.log('Upload successful! URL:', downloadURL);
+          } catch (urlError: any) {
+            console.error('Error getting download URL:', urlError);
+            alert('Upload succeeded but failed to get the image link.');
+            setUploading(false);
+          }
         }
       );
     } catch (error: any) {
