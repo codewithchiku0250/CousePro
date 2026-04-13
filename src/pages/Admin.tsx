@@ -56,13 +56,14 @@ export default function Admin() {
           }
         } catch (error) {
           console.error('Error checking admin status:', error);
-          // If Firestore check fails but they aren't the hardcoded admin, redirect
           navigate('/');
         }
       };
       checkAdmin();
+    } else if (!loading) {
+      navigate('/admin-login');
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -106,14 +107,22 @@ export default function Admin() {
     }
   };
 
-  const saveCourse = async (course: Course) => {
+  const saveCourse = async (courseData: Course) => {
+    setLoading(true);
     try {
-      await setDoc(doc(db, 'courses', course.id), course);
+      // Ensure the ID is consistent
+      const courseId = courseData.id;
+      await setDoc(doc(db, 'courses', courseId), courseData);
+      
       setIsModalOpen(false);
       setEditingCourse(null);
-      fetchData();
+      await fetchData(); // Refresh the list
+      alert('Course saved successfully!');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `courses/${course.id}`);
+      console.error('Error saving course:', error);
+      handleFirestoreError(error, OperationType.WRITE, `courses/${courseData.id}`);
+    } finally {
+      setLoading(false);
     }
   };
 

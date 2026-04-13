@@ -11,13 +11,13 @@ interface CourseModalProps {
 
 export default function CourseModal({ course, onClose, onSave }: CourseModalProps) {
   const [formData, setFormData] = useState<Partial<Course>>(
-    course || {
+    course ? { ...course } : {
       title: '',
       description: '',
       instructor: '',
       price: 0,
       duration: '',
-      thumbnail: 'https://picsum.photos/seed/ai/800/450',
+      thumbnail: 'https://picsum.photos/seed/ai/400/225',
       modules: []
     }
   );
